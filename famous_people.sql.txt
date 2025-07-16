@@ -1,0 +1,204 @@
+-- 🔹 Table: Famous People
+CREATE TABLE famous_people (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  profession TEXT,
+  country TEXT
+);
+
+INSERT INTO famous_people (name, profession, country) VALUES 
+("Umm Kulthum", "Singer and Poet", "Egypt"),
+("Nizar Qabbani", "Poet and Diplomat", "Syria"),
+("Taha Hussein", "Writer and Thinker", "Egypt"),
+("Abdel Halim Hafez", "Singer and Actor", "Egypt"),
+("Ahmed Shawqi", "Poet", "Egypt"),
+("Salah Jahin", "Poet and Screenwriter", "Egypt"),
+("Youssef Chahine", "Film Director", "Egypt"),
+("Fairuz", "Singer", "Lebanon"),
+("May Ziadeh", "Writer", "Lebanon"),
+("Al-Mutanabbi", "Poet", "Iraq");
+
+-- 🔹 Table: Songs
+CREATE TABLE songs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  singer_id INTEGER
+);
+
+INSERT INTO songs (title, singer_id) VALUES
+("Enta Omri", 1),
+("Alf Leila Wa Leila", 1),
+("Ahwak", 4),
+("Zay El Hawa", 4),
+("Kan Endena Tahoun", 8),
+("Bhebak Ya Lubnan", 8);
+
+-- 🔹 Table: Poems
+CREATE TABLE poems (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  poet_id INTEGER
+);
+
+INSERT INTO poems (title, poet_id) VALUES
+("The Jasmine Scent", 2),
+("Love Without Limits", 2),
+("The Nile", 5),
+("The Donkey", 5),
+("I Am the People", 6),
+("If They Ask Me", 6),
+("If You Had Known", 10),
+("The Horse and the Sword", 10);
+
+-- 🔹 Table: Books
+CREATE TABLE books (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  author_id INTEGER
+);
+
+INSERT INTO books (title, author_id) VALUES
+("The Days", 3),
+("On Pre-Islamic Poetry", 3),
+("The Blue Flame", 9),
+("Love and Life", 9);
+
+-- 🔹 Table: Movies
+CREATE TABLE movies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  actor_or_director_id INTEGER
+);
+
+INSERT INTO movies (title, actor_or_director_id) VALUES
+("The Land", 7),
+("Alexandria... Why?", 7),
+("The Sparrow", 7),
+("The Return of the Spirit", 7);
+
+-- 🔹 Query: All Poems by Each Person
+SELECT 
+  p.name, 
+  COALESCE(po.title, 'Not Available') AS poem_title
+FROM 
+  famous_people p
+LEFT JOIN poems po ON p.id = po.poet_id;
+
+-- 🔹 Query: All Songs by Each Person
+SELECT 
+  p.name,
+  COALESCE(s.title, 'Not Available') AS song_title
+FROM 
+  famous_people p
+LEFT JOIN songs s ON p.id = s.singer_id;
+
+-- 🔹 Query: All Books by Each Person
+SELECT 
+  p.name,
+  COALESCE(b.title, 'Not Available') AS book_title
+FROM 
+  famous_people p
+LEFT JOIN books b ON p.id = b.author_id;
+
+-- 🔹 Query: All Movies by Each Person
+SELECT 
+  p.name,
+  COALESCE(m.title, 'Not Available') AS movie_title
+FROM 
+  famous_people p
+LEFT JOIN movies m ON p.id = m.actor_or_director_id;
+
+-- 🔹 Query: Full Overview (All Works)
+SELECT 
+  p.name,
+  COALESCE(s.title, 'Not Available') AS song,
+  COALESCE(po.title, 'Not Available') AS poem,
+  COALESCE(b.title, 'Not Available') AS book,
+  COALESCE(m.title, 'Not Available') AS movie
+FROM 
+  famous_people p
+LEFT JOIN songs s ON p.id = s.singer_id
+LEFT JOIN poems po ON p.id = po.poet_id
+LEFT JOIN books b ON p.id = b.author_id
+LEFT JOIN movies m ON p.id = m.actor_or_director_id;
+
+-- 🔹 Query: People Who Wrote More Than One Poem
+SELECT 
+  p.name,
+  COUNT(po.id) AS poem_count
+FROM 
+  famous_people p
+JOIN poems po ON p.id = po.poet_id
+GROUP BY p.id
+HAVING poem_count > 1;
+
+-- 🔹 Query: Total Works Per Person
+SELECT 
+  p.name,
+  p.profession,
+  p.country,
+  COUNT(DISTINCT s.id) + COUNT(DISTINCT po.id) + COUNT(DISTINCT b.id) + COUNT(DISTINCT m.id) AS total_works
+FROM 
+  famous_people p
+LEFT JOIN songs s ON p.id = s.singer_id
+LEFT JOIN poems po ON p.id = po.poet_id
+LEFT JOIN books b ON p.id = b.author_id
+LEFT JOIN movies m ON p.id = m.actor_or_director_id
+GROUP BY p.id
+ORDER BY total_works DESC;
+
+-- 🔹 Query: Works and Their Types
+SELECT p.name, 'Song' AS work_type, s.title AS work_title
+FROM famous_people p
+JOIN songs s ON p.id = s.singer_id
+UNION
+SELECT p.name, 'Poem', po.title
+FROM famous_people p
+JOIN poems po ON p.id = po.poet_id
+UNION
+SELECT p.name, 'Book', b.title
+FROM famous_people p
+JOIN books b ON p.id = b.author_id
+UNION
+SELECT p.name, 'Movie', m.title
+FROM famous_people p
+JOIN movies m ON p.id = m.actor_or_director_id
+ORDER BY p.name;
+
+-- 🔹 Query: Total Works by Country and Type
+SELECT 
+  p.country,
+  COUNT(DISTINCT s.id) AS song_count,
+  COUNT(DISTINCT po.id) AS poem_count,
+  COUNT(DISTINCT b.id) AS book_count,
+  COUNT(DISTINCT m.id) AS movie_count
+FROM 
+  famous_people p
+LEFT JOIN songs s ON p.id = s.singer_id
+LEFT JOIN poems po ON p.id = po.poet_id
+LEFT JOIN books b ON p.id = b.author_id
+LEFT JOIN movies m ON p.id = m.actor_or_director_id
+GROUP BY p.country
+ORDER BY p.country;
+
+-- 🔹 Query: Number of Each Work by Person
+SELECT 
+  p.name,
+  p.profession,
+  p.country,
+  COUNT(DISTINCT s.id) AS song_count,
+  COUNT(DISTINCT po.id) AS poem_count,
+  COUNT(DISTINCT b.id) AS book_count,
+  COUNT(DISTINCT m.id) AS movie_count
+FROM 
+  famous_people p
+LEFT JOIN songs s ON p.id = s.singer_id
+LEFT JOIN poems po ON p.id = po.poet_id
+LEFT JOIN books b ON p.id = b.author_id
+LEFT JOIN movies m ON p.id = m.actor_or_director_id
+GROUP BY p.id
+ORDER BY 
+  song_count DESC,
+  poem_count DESC,
+  book_count DESC,
+  movie_count DESC;
